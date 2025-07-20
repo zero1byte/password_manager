@@ -47,17 +47,25 @@ class RESPONSE :
 # Insert all log list into file whenever program end
 def updateLogs():
     # insert error logs into log file
+    path=Path(os.getcwd(),ERROR_LOGS_FILE)
+    if not os.path.exists(ERROR_LOGS_FILE):
+         with open(path,"x") as f:
+              f.close()
     if len(ERROR_LOGS)>0:
-        path=Path(os.getcwd(),ERROR_LOGS_FILE)
         with open(path,"a") as f:
                 for log in ERROR_LOGS:
                     f.write(log)
                 f.close()
     #update app logs in file
+    path=Path(os.getcwd(),APP_LOGS_FILE)
+    if not os.path.exists(ERROR_LOGS_FILE):
+         with open(path,"x") as f:
+              f.close()
     if len(APP_LOGS)>0:
-        path=Path(os.getcwd(),APP_LOGS_FILE)
         with open(path,"a") as f:
                 for log in APP_LOGS:
                     f.write(log)
                 f.close()
+    
+
 atexit.register(updateLogs)

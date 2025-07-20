@@ -60,5 +60,6 @@ chmod +x run_passman.sh
 # Step 6: Create global symlink
 sudo ln -sf "$PROJECT_DIR/run_passman.sh" /usr/local/bin/passman
 
+
 echo "Installation complete."
 echo "You can now run the application from anywhere using the command: passman"
