@@ -34,7 +34,7 @@ else
     exit 1
 fi
 
-# Step 4: Upgrade pip and install dependencies
+# Step 4: Install dependencies
 echo "Installing Python dependencies..."
 pip install --upgrade pip
 
@@ -45,7 +45,19 @@ else
     echo "requirements.txt not found. Skipping dependency installation."
 fi
 
-# Step 5: Create launcher script to run passman
+# Step 5: Create required folders and files
+echo "Creating required folders and files..."
+
+mkdir -p config
+touch config/.env
+
+mkdir -p logs
+
+mkdir -p services/keys
+
+echo "Project structure setup complete."
+
+# Step 6: Create launcher script to run passman
 PROJECT_DIR="$PWD"
 
 cat << EOF > run_passman.sh
@@ -57,14 +69,8 @@ EOF
 
 chmod +x run_passman.sh
 
-# Step 6: Create global symlink
+# Step 7: Create global symlink
 sudo ln -sf "$PROJECT_DIR/run_passman.sh" /usr/local/bin/passman
-
-
-# create some required files and folder
-touch config/.env
-mkdir logs 
-cd services && mkdir keys
 
 echo "Installation complete."
 echo "You can now run the application from anywhere using the command: passman"
