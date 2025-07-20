@@ -1,4 +1,4 @@
 python-crontab
 argparse
 cryptography
-pycryptodomex
+pycryptodome
