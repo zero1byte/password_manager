@@ -3,7 +3,6 @@
 import os,sys
 import argparse
 import atexit
-import subprocess
 
 from services import *
 from  config import APP_CMD_NAME,ENV_FILE_
