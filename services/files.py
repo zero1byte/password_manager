@@ -1,4 +1,4 @@
-import os
+import os,sys
 import json
 from pathlib import Path
 
@@ -71,23 +71,28 @@ class file:
 
 
     def write(self,file,data):
-
-        if not (file and data):
-            ERROR("file & data arguments required",file)
-            return False
-        else :
-            path=Path(self.directory,file)
-            if not self.is_file_exists(path):
-                ERROR("File not found",path)
+        try:
+            if not (file and data):
+                ERROR("file & data arguments required",file)
+                return False
             else :
-                f=open(path,'w')
-                # change from Objects to String
-                # if self.isJSON : f.write(json.dumps(data))
-                # else : f.write(f"{data}")
-                f.write(f"{data}")
-                f.close()
-                return True
-        return False
+                path=Path(self.directory,file)
+                if not self.is_file_exists(path):
+                    ERROR("File not found",path)
+                else :
+                    f=open(path,'w')
+                    # change from Objects to String
+                    # if self.isJSON : f.write(json.dumps(data))
+                    # else : f.write(f"{data}")
+                    f.write(f"{data}")
+                    f.close()
+                    return True
+            return False
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"RSA keys write to files: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})").print()
+            return
 
 
     def delete(self,file):

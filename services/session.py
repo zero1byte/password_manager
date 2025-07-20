@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 from datetime import datetime,timedelta
 from crontab import CronTab
-import sys
+import sys,os
 
 
 
@@ -15,6 +15,7 @@ class session :
         self.f=file()
         self.session_file=Path(os.getcwd(),ENV_FILE_)
         self.password=None
+        self.verified=False
 
 
     # delay : minutes
@@ -43,8 +44,11 @@ class session :
             job=cron.new(command=command,comment=description)
             job.setall(cron_time)
             cron.write()
-        except Exception as f:
-            ERROR("session init failed",f)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"Session init failed: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})")
+            return
 
 
 
@@ -65,3 +69,13 @@ class session :
             ERROR("password not fetched from session file",f)
             return 
         
+    def remove(self):
+        try:
+            self.password=None
+            self.verified=False
+            self.f.write(self.session_file,"")
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"Encryption failed: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})")
+            return

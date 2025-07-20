@@ -5,3 +5,5 @@ temp/
 logs/
 config/keys/
 data/*.sqlite3
+*.pem
+data/*.json

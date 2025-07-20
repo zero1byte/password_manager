@@ -3,6 +3,8 @@ from .files import file
 from .crypto import Asymmentric,Symmentric
 from .dbms import database,Data
 from .session import session
+from .cronjob import cronfunction
+
 
 __all__ = [
     'ERROR',
@@ -12,5 +14,6 @@ __all__ = [
     'file',
     'database',
     'Data',
-    'session'
+    'session',
+    'cronfunction'
 ]

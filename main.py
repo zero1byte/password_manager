@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
-
+import os,sys
 import argparse
 import atexit
+import subprocess
 
 from services import *
-from  config import APP_CMD_NAME
+from  config import APP_CMD_NAME,ENV_FILE_
 
 
-DBMS=database()
+DBMS=None
 s=session()
 
 def add(args):
@@ -23,36 +24,61 @@ def add(args):
         DBMS.insert(obj)
         
 def all(args):
-        for obj in DBMS.getAll():
-                print(obj)
+        buffer=DBMS.getAll()
+        if(buffer and len(buffer)>0 ):
+                for obj in buffer:
+                        print(obj)
+        else:
+                print("No Record Found")
 
 def search(args):
         identifier=args.identifier or args.i or None
         if(not identifier):
                 ERROR("Search string required ")
-        for obj in DBMS.search(identifier):
-                print(obj)
+        buffer=DBMS.search(identifier)
+        if buffer and len(buffer)>0:
+                for obj in DBMS.search(identifier):
+                        print(obj)
+        else:
+                print("No record found")
 
 def delete(args):
         identifier=args.identifier or args.i or None
         if(not identifier):
                 ERROR("identifier string required ")
 
+#remove password from file
+def logout(args:any):
+        cronfunction(ENV_FILE_)
+
 def verifyUser():
-        #get user application password & unlock keys
-        if not s.get():
-                password=input("Enter your key : ")
-                s.init(password=password)
-                return password
-        else:
-                return s.get()
+        print("Verifying user...")
+        try :
+                global DBMS
+                #get user application password & unlock keys
+                if not s.get():
+                        password=input("Enter Master Key : ")
+                        s.init(password=password)
+                # verify master key
+                sym=Symmentric(s.get())
+                if sym.decrypt_keys():
+                        DBMS=database()
+                        s.verified=True
+                        return True
+                else:
+                        s.remove()
+                        cronfunction(ENV_FILE_)
+                        return False
 
-def isAuthorized():
-        asym=Asymmentric()
-        print(asym.is_valid_private_key())
+        except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                ERROR(f"user not verified: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})").print()
+                return False
 
 
-def  init(args):
+
+def  install(args):
 
         password=args.password or args.p or None
         
@@ -76,16 +102,9 @@ def  init(args):
 # main function of application
 def main():
 
-        # if user verified then decrypt keys
-        if verifyUser():
-                syn=Symmentric(s.get())
-                if  (syn.keyForm()==2):
-                        syn.decrypt_keys()
-                else:
-                        ERROR("Something went wrong at verify").print()
-                        exit(0)
-        
-
+        if not verifyUser():
+                print("Incorrect Master key")
+                exit(0)
 
         parser = argparse.ArgumentParser(prog=APP_CMD_NAME, description="My CLI Tool for Secure Password locally")
         subparsers = parser.add_subparsers(dest="command", required=True)
@@ -117,7 +136,13 @@ def main():
         parser_search=subparsers.add_parser("init",help="Initial setup")
         parser_search.add_argument("password",nargs="?",help="app password")
         parser_search.add_argument("-p",required=False,help="app password")
-        parser_search.set_defaults(func=init)
+        parser_search.set_defaults(func=install)
+
+        # 'logout' : remove session
+        parser_search=subparsers.add_parser("logout",help="Remove session")
+        parser_search.add_argument("password",nargs="?",help="app password")
+        parser_search.add_argument("-p",required=False,help="app password")
+        parser_search.set_defaults(func=logout)
 
         # Parse and dispatch
         args = parser.parse_args()
@@ -127,9 +152,10 @@ def main():
 
 # encrypt before exit from application
 def atexit_exe():
-        sys=Symmentric(s.get())
-        sys.encrypt_keys()
-        DBMS.update()
+        if s.verified:
+                sys=Symmentric(s.get())
+                DBMS.update()
+                sys.encrypt_keys()
 
 # update storage file at end of program
 atexit.register(atexit_exe)

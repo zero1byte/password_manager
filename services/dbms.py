@@ -6,7 +6,7 @@ import uuid
 from services import RESPONSE,ERROR,Asymmentric,file
 from config import STORAGE_FILE
 
-Storage = []
+BUFFER = []
 
 class Data:
     def __init__(self,domain,password,remarks=None,createdAt=None,updatedAt=None,isEnrypted=False,id=None):
@@ -33,6 +33,8 @@ class Data:
 
     def encrypt(self):
         try:
+            if self.isEnrypted:
+                return
             en=Asymmentric()
             encrypted_text=en.en(self.password)
             self.password=encrypted_text
@@ -47,7 +49,7 @@ class Data:
                 self.password=en.de(self.password)
                 self.isEnrypted=False
         except Exception as e:
-            ERROR("Already encrypted",str(e)).print()
+            ERROR("Already decrypted",str(e)).print()
 
     def __str__(self):
         return json.dumps(self.__dict__,indent=5,default=str)
@@ -61,9 +63,9 @@ class Data:
 
 class database:
     def __init__(self):
-        global Storage
+        global BUFFER
         self.f=file()
-        if(len(Storage)<=0):
+        if(len(BUFFER)<=0):
             if not self.f.is_file_exists(STORAGE_FILE):
                 self.f.create(STORAGE_FILE)
             else : 
@@ -71,28 +73,34 @@ class database:
                 previous_data= self.f.read(STORAGE_FILE)
                 if not previous_data:
                     return
-                Storage = [Data(**entry) for entry in previous_data]
+                BUFFER = [Data(**entry) for entry in previous_data]
+                for obj in BUFFER:
+                        obj.decrypt()
 
     def getAll(self):
-        return Storage
+        return BUFFER
 
     def insert(self,obj):
-        Storage.append(obj)
+        BUFFER.append(obj)
 
 
     def update(self):
         try:
-            global Storage
-            json_formet=[obj.to_object() for obj in Storage]
+            global BUFFER
+            for obj in BUFFER:
+                if not obj.isEnrypted:
+                    obj.encrypt()
+
+            json_formet=[obj.to_object() for obj in BUFFER]
             self.f.write(STORAGE_FILE,json.dumps(json_formet,indent=4))
             RESPONSE("Data updated at file",datetime.datetime.now().strftime("%d:%m:%Y %H:%M:%S"))
         except Exception as e:
-            ERROR("Error while Updating Storage",str(e)).print()
+            ERROR("Error while Updating BUFFER",str(e)).print()
 
     def search(self,identifier):
         try:
             searched=[]
-            for obj in Storage:
+            for obj in BUFFER:
                 if f"{obj}".find(identifier)!=-1 :
                     searched.append(obj)
             return searched
@@ -102,9 +110,9 @@ class database:
 
     def delete(self,idetifier):
         try:
-            for i,obj in enumerate(Storage):
+            for i,obj in enumerate(BUFFER):
                 if f"{obj}".find(idetifier) != -1:
-                    Storage.pop(i)
+                    BUFFER.pop(i)
                     print(i,obj)
                     return True
             return False

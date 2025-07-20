@@ -1,5 +1,5 @@
 from Crypto.PublicKey import RSA
-import os,sys
+import os,sys,json
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Util.Padding import pad, unpad
@@ -26,17 +26,24 @@ class Asymmentric:
         self.f=file(False,self.directory)
 
     def store_keys(self, key_size=2048):
-        key = RSA.generate(key_size)
-        #private key
-        private_key=key.export_key('PEM').decode("utf-8")
-        self.f.create(PRIVATE_KEY_FILE)
-        self.f.write(PRIVATE_KEY_FILE, private_key)
-        #public key generate & store
-        public_key = key.publickey()
-        public_key=public_key.export_key('PEM').decode("utf-8")
-        self.f.create(PUBLIC_KEY_FILE)
-        self.f.write(PUBLIC_KEY_FILE, public_key)
-        return True
+        try:
+            key = RSA.generate(key_size)
+            #private key
+            private_key=key.export_key('PEM').decode("utf-8")
+            self.f.create(PRIVATE_KEY_FILE)
+            print(private_key)
+            self.f.write(PRIVATE_KEY_FILE, private_key)
+            #public key generate & store
+            public_key = key.publickey()
+            public_key=public_key.export_key('PEM').decode("utf-8")
+            self.f.create(PUBLIC_KEY_FILE)
+            self.f.write(PUBLIC_KEY_FILE, public_key)
+            return True
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"RSA keys not stored: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})").print()
+            return
     
     def private_key(self):
         try:
@@ -47,11 +54,15 @@ class Asymmentric:
             ERROR("Private key not getting | try again")
             return False
         
+    def is_key_file_exist(self):
+         return os.path.exists(PUBLIC_KEY_FILE) and os.path.exists(PRIVATE_KEY_FILE)
     # if is store key is valid or not
     #@param - False : if private key is encrypted
     # else True
     def is_valid_private_key(self):
         try:
+            if not os.path.exists(PRIVATE_KEY_FILE):
+                return False
             private_key= self.private_key()
             RSA.import_key(private_key)
             return True
@@ -61,6 +72,8 @@ class Asymmentric:
         
     def is_valid_public_key(self):
         try:
+            if not os.path.exists(PUBLIC_KEY_FILE):
+                return False
             key= self.public_key()
             RSA.import_key(key)
             return True
@@ -87,7 +100,9 @@ class Asymmentric:
             encrypted = cipher.encrypt(string.encode())
             return (base64.b64encode(encrypted).decode())
         except Exception as e:
-            ERROR(f"Encryption failed: {e}")
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"Encryption failed: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})").print()
             return False
 
     # RSA Decryption 
@@ -100,7 +115,9 @@ class Asymmentric:
             decrypted = cipher.decrypt(base64.b64decode(encrypted_bytes.encode()))
             return decrypted.decode()
         except Exception as e:
-            ERROR(f"Decryption failed: {e}")
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"Decryption failed: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})").print()
             return False
 
 
@@ -111,6 +128,7 @@ class Symmentric():
         self.f=file(isJSON=False)
         self.asym=Asymmentric()
 
+    # only used for RSA keys
     def en(self, p_text):
         try:
             salt = get_random_bytes(16)
@@ -124,15 +142,21 @@ class Symmentric():
                 "ciphertext": base64.b64encode(ciphertext).decode(),
                 "tag": base64.b64encode(tag).decode()
             }
-            RESPONSE(" encryption done ",None)
-            return result
+            RESPONSE("RSA key encryption done ",None)
+            # double quote str of object
+            return json.dumps(result)
         except Exception as e:
-            ERROR("Encryption failed:", e).print()
-            exit
-            return False
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"Encryption failed: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})")
+            return
 
+    #only used for RSA keys
     def de(self, data):
         try:
+            # convert data into object
+            data=json.loads(data)
+
             salt = base64.b64decode(data["salt"])
             nonce = base64.b64decode(data["nonce"])
             ciphertext = base64.b64decode(data["ciphertext"])
@@ -146,30 +170,49 @@ class Symmentric():
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            ERROR(f"Decryption failed: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})").print()
-            exit(0)
+            ERROR(f"Decryption failed: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})")
             return False
         
 
     def encrypt_keys(self):
         try:
+            #check weather key exists or not
+            b= self.asym.is_valid_private_key() and self.asym.is_valid_public_key()
+            if not b:
+                KeyError("Keys not valid for encryption")
+                return
+            
             en_key= self.en(self.asym.private_key())
-            self.f.write(PRIVATE_KEY_FILE,en_key)
             en_key_public= self.en(self.asym.public_key())
+            if not(en_key and en_key_public):
+                return False
+            self.f.write(PRIVATE_KEY_FILE,en_key)
             self.f.write(PUBLIC_KEY_FILE,en_key_public)
         except Exception as e:
-            ERROR("RSA keys not encrypt",e).print()
-            exit
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"RSA keys not encrypt: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})")
             return False
         
     def decrypt_keys(self):
         try:
+            #check is file exists
+            e=self.asym.is_key_file_exist()
+            if not e:
+                KeyError("Keys are not exists")
+                return False
+
             en_key=self.de(self.asym.private_key())
-            self.f.write(PRIVATE_KEY_FILE,en_key)
             en_key_public=self.de(self.asym.public_key())
+            if not(en_key and en_key_public):
+                return False
+            self.f.write(PRIVATE_KEY_FILE,en_key)
             self.f.write(PUBLIC_KEY_FILE,en_key_public)
+            return True
         except Exception as e:
-            ERROR("RSA keys not decrypt",e).print()
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            ERROR(f"RSA keys not decrypt: { e } ", f"({exc_type}, {fname}, {exc_tb.tb_lineno})").print()
             return False
 
     def keyForm(self):
