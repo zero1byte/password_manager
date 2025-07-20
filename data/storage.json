@@ -1,1 +1,11 @@
-[]
+[
+    {
+        "id": "5405cf37-cd7e-46fc-bd1c-7000148e5419",
+        "domain": "google.com",
+        "password": "NRWp25g9pmhCt8klcQ0OyylbZ+ABGY1RlsGYdoxlkVu2vbVoELjMibG5HdLgM+VP/MY5HrLdLeyt6iM0GAptJHfRJV1Oft3y0fVM2oc1B7XXLyY2wiBhy8BJduNjLhB8hP2RdJ8JAB5xcOAxmyxzMQ0IPpVKoknt3JqC9gH981S4QERWU+6Qqblx1Dq9kyB7CAWgOh66kgJfU7LyBh4WlQ9Zsqc5Dvyp8nmq3MYMNnlmLJkMY1tQ7l63Vn9aq6vc8ifC8ESDXfCIfhjtAmj8/a7L9ZYcGUQgBwb3bwrucoGrqSeJSPm3YVcoO7DoRjF8yqjowj9VnsysdtxpCwrQ8w==",
+        "remarks": null,
+        "createdAt": "20:07:2025 13:35:58",
+        "updatedAt": "20:07:2025 13:35:58",
+        "isEnrypted": true
+    }
+]
