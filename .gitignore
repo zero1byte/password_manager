@@ -7,3 +7,5 @@ config/keys/
 data/*.sqlite3
 *.pem
 data/*.json
+data/storage.json
+data/storage.json

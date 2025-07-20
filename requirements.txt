@@ -1,0 +1,4 @@
+python-crontab
+argparse
+cryptography
+pycryptodomex

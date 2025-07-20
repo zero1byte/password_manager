@@ -1,38 +1,15 @@
 #!/bin/bash
-
-# Exit on error
 set -e
 
-# Check Python version
-if ! command -v python3 &> /dev/null
-then
-    echo "❌ Python3 is not installed. Please install Python3 first."
-    exit 1
-fi
+cd "$(dirname "$0")"
 
-echo "✅ Python3 found: $(python3 --version)"
+# Run setup
+bash setup.sh
 
-# Create virtual environment if not exists
-if [ ! -d "venv" ]; then
-    echo "📦 Creating virtual environment..."
-    python3 -m venv venv
-else
-    echo "🔁 Virtual environment already exists."
-fi
+# Make run_myapp.sh executable
+chmod +x run.sh
 
-# Activate virtual environment
-source venv/bin/activate
-echo "✅ Virtual environment activated."
+# Create global symlink (replaces any existing one)
+sudo ln -sf "$PWD/run.sh" /usr/local/bin/passman
 
-# Upgrade pip
-echo "⬆️ Upgrading pip..."
-pip install --upgrade pip
-
-# Install requirements
-if [ -f "requirements.txt" ]; then
-    echo "📄 Installing from requirements.txt..."
-    pip install -r requirements.txt
-    echo "✅ All dependencies installed."
-else
-    echo "⚠️ requirements.txt not found. Please add your dependencies there."
-fi
+echo "✅ Installed successfully. Now run your app anywhere with: passman"
