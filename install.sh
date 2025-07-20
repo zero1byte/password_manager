@@ -64,7 +64,7 @@ sudo ln -sf "$PROJECT_DIR/run_passman.sh" /usr/local/bin/passman
 # create some required files and folder
 touch config/.env
 mkdir logs 
-mkdir services/keys
+cd services && mkdir keys
 
 echo "Installation complete."
 echo "You can now run the application from anywhere using the command: passman"
