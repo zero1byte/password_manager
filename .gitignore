@@ -9,3 +9,4 @@ data/*.sqlite3
 data/*.json
 data/storage.json
 data/storage.json
+run_passman.sh
